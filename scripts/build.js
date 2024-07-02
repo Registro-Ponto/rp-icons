@@ -32,7 +32,7 @@ async function svgToReactComponent(svg, componentName, format, isDeprecated) {
     .replace('export default', 'module.exports =')
 }
 
-async function getIcons(folderName) {
+async function getSvgs(folderName) {
   let files = await fs.readdir(`./optimized/${folderName}`)
   return Promise.all(
     files.map(async (file) => ({
@@ -66,16 +66,21 @@ async function ensureWriteJson(file, json) {
   await ensureWrite(file, JSON.stringify(json, null, 2) + '\n')
 }
 
-async function buildIcons(folderName, format) {
-  let outDir = `./react/${folderName}`
+/**
+ *
+ * @param {("icons"|"illustrations")} packageName
+ * @param {("esm"|"cjs")} format
+ */
+async function buildIcons(packageName, format) {
+  let outDir = `./rp-${packageName}/${packageName}`
   if (format === 'esm') {
     outDir += '/esm'
   }
 
-  let icons = await getIcons(folderName)
+  let svgs = await getSvgs(packageName)
 
   await Promise.all(
-    icons.flatMap(async ({ componentName, svg, isDeprecated }) => {
+    svgs.flatMap(async ({ componentName, svg, isDeprecated }) => {
       let content = await svgToReactComponent(svg, componentName, format, isDeprecated)
 
       /** @type {string[]} */
@@ -97,27 +102,41 @@ async function buildIcons(folderName, format) {
     })
   )
 
-  await ensureWrite(`${outDir}/index.js`, exportAll(icons, format))
+  await ensureWrite(`${outDir}/index.js`, exportAll(svgs, format))
 
-  await ensureWrite(`${outDir}/index.d.ts`, exportAll(icons, 'esm', false))
+  await ensureWrite(`${outDir}/index.d.ts`, exportAll(svgs, 'esm', false))
 }
 
-async function main() {
+/**
+ * @param {("icons"|"illustrations")} packageName
+ */
+async function main(packageName) {
   const cjsPackageJson = { module: './esm/index.js', sideEffects: false }
   const esmPackageJson = { type: 'module', sideEffects: false }
 
-  console.log(`Building react package...`)
+  console.log(`Construindo pacote ${packageName}...`)
 
-  await Promise.all([rimraf(`./react/icons/*`)])
+  await Promise.all([rimraf(`./rp-${packageName}/${packageName}/*`)])
 
   await Promise.all([
-    buildIcons('icons', 'cjs'),
-    buildIcons('icons', 'esm'),
-    ensureWriteJson(`./react/icons/esm/package.json`, esmPackageJson),
-    ensureWriteJson(`./react/icons/package.json`, cjsPackageJson),
+    buildIcons(packageName, 'cjs'),
+    buildIcons(packageName, 'esm'),
+    ensureWriteJson(`./rp-${packageName}/${packageName}/esm/package.json`, esmPackageJson),
+    ensureWriteJson(`./rp-${packageName}/${packageName}/package.json`, cjsPackageJson),
   ])
 
-  return console.log(`Finished building react package.`)
+  return console.log(`Construção do pacote ${packageName} finalizada.`)
 }
 
-main()
+/**
+ * @type {("icons"|"illustrations")}
+ */
+const packageName = process.argv.slice(2)[0]
+
+if (!packageName) {
+  throw new Error('Por favor informe o pacote a ser construído: ("icons" || "illustrations")')
+} else if (packageName !== 'icons' && packageName !== 'illustrations') {
+  throw new Error('O argumento após o comando build deve ser "icons" ou "illustrations"')
+}
+
+main(packageName)
