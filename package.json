@@ -4,14 +4,13 @@
   "license": "MIT",
   "files": [
     "icons",
+    "illustrations",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "prebuild": "rimraf ./icons ./react/icons ./optimized/icons",
-    "build-icons": "rimraf ./icons && svgo --config=svgo.icons.mjs -f ./src/icons -o ./optimized/icons --pretty --indent=2",
-    "build": "npm run prebuild && npm run build-icons && node ./scripts/build.js",
+    "build-icons": "rimraf ./rp-icons/icons ./optimized/icons && svgo --config=svgo.icons.mjs -f ./src/icons -o ./optimized/icons --pretty --indent=2 && node ./scripts/build.js icons",
+    "build-illustrations": "rimraf ./rp-illustrations/illustrations ./optimized/illustrations && svgo --config=svgo.icons.mjs -f ./src/illustrations -o ./optimized/illustrations --pretty --indent=2 && node ./scripts/build.js illustrations",
     "release-channel": "node ./scripts/release-channel.js",
     "release-notes": "node ./scripts/release-notes.js"
   },
@@ -19,7 +18,6 @@
     "@babel/core": "^7.12.10",
     "@babel/plugin-transform-react-jsx": "^7.12.12",
     "@svgr/core": "^5.5.0",
-    "@vue/compiler-dom": "^3.0.5",
     "camelcase": "^6.0.0",
     "prettier": "^2.8.7",
     "rimraf": "^3.0.2",
